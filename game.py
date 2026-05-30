@@ -1,104 +1,152 @@
 from tkinter import *
 from tkinter import ttk
-from PIL import ImageTk, Image
+from tkinter import messagebox
 import random
-from english_words import get_english_words_set
+import string
+from copy import copy
 
-DICTIONARY = [x for x in get_english_words_set(['web2'], lower=True) if len(x) == 5]
-WORD = random.choice(DICTIONARY)
+TOTAL_ATTEMPT = 6
+WORD_LENGTH = 5
+BACKSPACE = 8
+ENTER = 13
+FILE_PATH = 'resource/five_letter_words.txt'
 
-root = Tk()
-root.title('Wordle implemented by Python')
+with open(FILE_PATH, 'r') as f:
+    content = f.read()
+    DICTIONARY = content.split('\n')
 
-style = ttk.Style()
-style.configure('Cell.TLabel', font='helvetica 24')
 
-table = []
-for i in range(5):
-    table.append([None, None, None, None, None])
+class Wordle:
+    def __init__(self, root):
+        self.root = root
+        self.root.title('Wordle implemented in python')
+        self.WORD = random.choice(DICTIONARY)
+        self.content = ttk.Frame(root)
+        self.content.grid(row=0, column=0, rowspan=TOTAL_ATTEMPT, columnspan=WORD_LENGTH, sticky=NSEW)
 
-for i in range(5):
-    for j in range(5):
-        frame = ttk.Frame(root, width=40, height=40, borderwidth=5)
-        frame.grid(row=i, column=j, padx=5, pady=5)
-        frame.grid_propagate(False)
+        style = ttk.Style()
+        style.configure('Cell.TLabel', font='helvetica 18')
 
-        cell = ttk.Label(frame, anchor='center')
-        cell.grid(sticky=NSEW)
-        cell['style'] = 'Cell.TLabel'
-        table[i][j] = cell
+        self.table = []
+        row = [None] * WORD_LENGTH
+        for _ in range(TOTAL_ATTEMPT):
+            self.table.append(copy(row))
 
-row = 0 
-column = 0 
+        for i in range(TOTAL_ATTEMPT):
+            for j in range(WORD_LENGTH):
+                frame = ttk.Frame(self.content, width=40, height=40, borderwidth=5, relief='groove')
+                frame.grid(row=i, column=j, padx=5, pady=5)
+                frame.grid_propagate(False)
 
-current_cell = table[row][column]
+                cell = ttk.Label(frame, anchor='center')
+                cell.grid(row=0, column=0, sticky=NSEW)
+                cell['style'] = 'Cell.TLabel'
+                self.table[i][j] = cell
 
-def obtain_word():
-    word = []
-    for cell in table[row]:
-        word.append(cell['text'])
-    return ''.join(word)
+        self.current_row = 0
+        self.current_column = 0
+        self.root.bind('<KeyPress>', lambda e: self.display(e))
 
-def is_valid(word):
-    if word in DICTIONARY:
-        return True
-    else:
-        return False
+    def popup(self, msg_tag):
+        if msg_tag == 'win':
+            msg = 'Congratulations!!'
+        else:
+            msg = 'Oh No! You Lose. Hidden word is: {}'.format(self.WORD)
+        messagebox.showinfo(message=msg)
 
-def reset():
-    for i in range(5):
-        table[row][i]['text'] = ''
+        decision = messagebox.askyesno(
+            message='Do you wanna play again?',
+            icon='question',
+            title='Play Again'
+            )
+        return decision
 
-def judge():
-    user_word = obtain_word() 
-    if is_valid(user_word): 
-        pattern = [0, 0, 0, 0, 0]
-        for i in range(5):
-            current_cell = table[row][i]
-            current_char = user_word[i]
-            if current_char == WORD[i]:
-                pattern[i] = 1
-                current_cell['background'] = 'green'
+    def obtain_word(self):
+        word = []
+        for cell in self.table[self.current_row]:
+            word.append(cell['text'].lower())
+        return ''.join(word)
+
+    def is_valid(self, word):
+        if word in DICTIONARY:
+            return True
+        else:
+            return False
+
+    def reset(self):
+        for i in range(WORD_LENGTH):
+            self.table[self.current_row][i]['text'] = ''
+
+    def judge(self):
+        user_word = self.obtain_word()
+        if self.is_valid(user_word):
+            pattern = [0] * WORD_LENGTH
+            for i in range(WORD_LENGTH):
+                current_cell = self.table[self.current_row][i]
+                current_char = user_word[i]
+                if current_char == self.WORD[i]:
+                    pattern[i] = 1
+                    current_cell['background'] = 'green'
+                else:
+                    if current_char in self.WORD:
+                        if user_word[self.WORD.index(current_char)] != current_char:
+                            current_cell['background'] = 'yellow'
+                        if self.WORD.count(current_char) > 1:
+                            current_cell['background'] = 'yellow'
+            if sum(pattern) == WORD_LENGTH:
+                return 1
             else:
-                if current_char in WORD:
-                    current_cell['background'] = 'yellow'
-
-        if sum(pattern) == 5:
-            return 1
+                return 0
         else:
-            return 0
+            return -1
 
-    else:
-        return -1
-
-def display(e):
-    global row
-    global column
-
-    current_cell = table[row][column]
-
-    current_cell['text'] = e.char
-    current_cell['anchor'] = 'center'
-    column += 1
-    if column == 5:
-        status = judge()
-        if status == 1:
-            print('You win')
-            root.destroy()
-        elif status == -1:
-            row = row
-            column = 0
-            reset()
+    def display(self, e):
+        char = e.char
+        if self.current_column < WORD_LENGTH:
+            current_cell = self.table[self.current_row][self.current_column]
+            if ord(char) == BACKSPACE:
+                # Delete Previous Entry
+                if self.current_column:
+                    self.current_column -= 1
+                    prev_cell = self.table[self.current_row][self.current_column]
+                    prev_cell['text'] = ''
+            elif char in string.ascii_letters:
+                # Proceed
+                current_cell['text'] = char.upper()
+                self.current_column += 1
         else:
-            row += 1
-            column = 0
-        if row == 5:
-            print('You Lost')
-            print('Correct word: {}'.format(WORD))
-            root.destroy()
+            if ord(char) == ENTER:
+                status = self.judge()
+                if status == 1:
+                    result = self.popup('win')
+                    if result:
+                        self.content.destroy()
+                        Wordle(self.root)
+                    else:
+                        self.root.destroy()
+                elif status == -1:
+                    self.current_column = 0
+                    self.reset()
+                else:
+                    self.current_row += 1
+                    self.current_column = 0
+            elif ord(char) == BACKSPACE:
+                prev_cell = self.table[self.current_row][self.current_column - 1]
+                prev_cell['text'] = ''
+                self.current_column -= 1
+        if self.current_row == TOTAL_ATTEMPT:
+            reply = self.popup('lose')
+            if reply:
+                self.content.destroy()
+                Wordle(self.root)
+            else:
+                self.root.destroy()
 
-root.bind('<KeyPress>', lambda e: display(e))
+def main():
+    root = Tk()
+    Wordle(root)
+    root.mainloop()
 
-root.mainloop()
-
+if __name__ == '__main__':
+    main()
 
