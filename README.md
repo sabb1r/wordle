@@ -66,4 +66,6 @@ python game.py
   <li>No keyboard display</li>
   <li>No visual representation of game status</li>
   <li>No history of game records</li>
+  <li>Only letters are highlighted instead of whole block</li>
+  <li>No animation when the hidden word is correctly guessed by the player</li>
 </ul>
