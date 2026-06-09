@@ -44,6 +44,12 @@ storm, here is quick guide about what the game is (though the game is very intui
 
 ## Installation
 ```bash
+No external dependencies required.
+
+> **Linux users:** If Tkinter is not available, install it via:
+sudo apt install python3-tk
+
+
 git clone https://github.com/sabb1r/wordle.git
 cd wordle
 pip install -r requirements.txt
@@ -54,6 +60,7 @@ pip install -r requirements.txt
 # Start Game
 python game.py
 ```
+
 ## Limitation & Future Improvement
 <ul>
   <li>No keyboard display</li>
