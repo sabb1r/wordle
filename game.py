@@ -7,8 +7,6 @@ from copy import copy
 
 TOTAL_ATTEMPT = 6
 WORD_LENGTH = 5
-BACKSPACE = 8
-ENTER = 13
 FILE_PATH = 'resource/five_letter_words.txt'
 
 with open(FILE_PATH, 'r') as f:
@@ -104,7 +102,7 @@ class Wordle:
         char = e.char
         if self.current_column < WORD_LENGTH:
             current_cell = self.table[self.current_row][self.current_column]
-            if ord(char) == BACKSPACE:
+            if e.keysym == 'BackSpace':
                 # Delete Previous Entry
                 if self.current_column:
                     self.current_column -= 1
@@ -115,7 +113,7 @@ class Wordle:
                 current_cell['text'] = char.upper()
                 self.current_column += 1
         else:
-            if ord(char) == ENTER:
+            if e.keysym == 'Return':
                 status = self.judge()
                 if status == 1:
                     result = self.popup('win')
@@ -130,7 +128,7 @@ class Wordle:
                 else:
                     self.current_row += 1
                     self.current_column = 0
-            elif ord(char) == BACKSPACE:
+            elif e.keysym == 'BackSpace':
                 prev_cell = self.table[self.current_row][self.current_column - 1]
                 prev_cell['text'] = ''
                 self.current_column -= 1
